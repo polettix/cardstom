@@ -1,0 +1,208 @@
+#!/usr/bin/env perl
+use 5.024;
+use warnings;
+use experimental qw< postderef signatures >;
+no warnings qw< experimental::postderef experimental::signatures >;
+use autodie;
+
+use SVG;
+use SVG::Parser;
+use Path::Tiny;
+use JSON::PP 'decode_json';
+use Data::Dumper; $Data::Dumper::Indent = 1;
+use Algorithm::Loops 'NestedLoops';
+
+use constant K => 5;
+
+main(@ARGV);
+
+sub main (@args) {
+   my $config = decode_json(path($args[0])->slurp_utf8());
+   my $dir = path($config->{output} // '.');
+   my (@names, %items) = qw< A B C led1 led2 led3 >;
+   my @dimensions = map { defined($_) ? $_ : [undef] }
+      $config->@{('color', @names)};
+   my $card_config = $config->{'card-config'} // {};
+   NestedLoops(
+      \@dimensions,
+      sub ($color, @s) {
+         @items{@names} = @s;
+         my $c = generate_card(
+            $card_config->%*,
+            color => $color->{value},
+            items => \%items,
+         );
+         my $f = join '-', map { $_->{'-name'} } grep { defined $_ } @_;
+         $dir->child("$f.svg")->spew($c->xmlify);
+         say $f;
+      },
+   );
+}
+
+sub generate_card (%args) {
+   my $WIDTH  = 210;
+   my $HEIGHT = 297;
+   my $K      = K();
+
+   state $grid = generate_grid($WIDTH, $HEIGHT, $K);
+
+   my $svg = SVG->new(
+      width      => ($args{width} // '62mm'),
+      height     => ($args{height} // '88mm'),
+      viewBox    => "0 0 $WIDTH $HEIGHT",
+      -nocredits => 1
+   );
+
+   $svg->rectangle(
+      width  => '100%',
+      height => '100%',
+      x      => 0,
+      y      => 0,
+      rx     => 10,
+      style  => {fill => '#f7f7f7', stroke => 'none'}
+   );
+
+   my $color = $args{color};
+   my $half = $svg->defs()->group(
+      id    => 'half',
+      style => {
+         'fill'         => $color,
+         'stroke'       => $color,
+         'stroke-width' => 0,
+      },
+   );
+
+   while (my ($key, $data) = each $args{items}->%*) {
+      next unless $data;
+      next unless $data->{'-path'};
+      my $slot = $grid->{$key} or next;
+      add_icon($half, $data, $slot);
+   }
+
+   $svg->use(-href => '#half');
+   $svg->use(
+      -href     => '#half',
+      transform => "matrix(-1,0,0,-1,$WIDTH,$HEIGHT)"
+   );
+
+   return $svg;
+}
+
+sub generate_grid ($width, $height, $K) {
+   my $y_unit = $height / (2 + $K + 1 + $K / 2 + 1 + $K + 1 + $K + 2);
+   my $slot_height = $y_unit * $K;
+   my $y1 = 2 * $y_unit;
+   my $y2 = (2 + $K + 1) * $y_unit;
+   my $led_height = $slot_height / 2;
+
+   my $x_unit = $width / (2 + $K + 1 + $K + 2);
+   my $slot_width  = $x_unit * $K;
+   my $x10 = 2 * $x_unit;
+   my $x20 = (2 + $K + 1) * $x_unit;
+
+   my $x_led_unit = $slot_width / ($K + 1 + $K + 1 + $K);
+   my $led_width = $x_led_unit * $K;
+   my $x11 = $x10 + ($K + 1) * $x_led_unit;
+   my $x12 = $x10 + ($K + 1 + $K + 1) * $x_led_unit;
+
+   return {
+      A => {
+         x => $x10,
+         y => $y1,
+         height => $slot_height,
+         width => $slot_width,
+      },
+      B => {
+         x => $x20,
+         y => $y1,
+         height => $slot_height,
+         width => $slot_width,
+      },
+      C => {
+         x => $x20,
+         y => $y2,
+         height => $slot_height,
+         width => $slot_width,
+      },
+      led1 => {
+         x => $x10,
+         y => $y2,
+         height => $led_height,
+         width => $led_width,
+      },
+      led2 => {
+         x => $x11,
+         y => $y2,
+         height => $led_height,
+         width => $led_width,
+      },
+      led3 => {
+         x => $x12,
+         y => $y2,
+         height => $led_height,
+         width => $led_width,
+      },
+   };
+}
+
+sub add_icon ($c, $icon, $slot) {
+   my $idata = $icon->{'-path'};
+   $idata = ref($idata) eq 'HASH' ? $idata
+      : ref($idata) eq 'CODE' ? $idata->()
+      : !ref($idata) ? load_icon($idata)
+      : die "unhandled icon type input <$idata>\n";
+
+   # evaluate scale factors for x and y, get bigger one
+   my ($sfx, $sfy) = map { $slot->{$_} / $idata->{$_} } qw< width height >;
+   my $sf = $sfx < $sfy ? $sfx : $sfy;
+   $sf *= $icon->{'-scale'} if $icon->{'-scale'};
+
+   my %coordinate_for = (width => 'x', height => 'y');
+   my $delta = {x => 0, y => 0};
+   for my $direction (qw< width height >) {
+      my $size = $idata->{$direction} * $sf;
+      next unless $size < $slot->{$direction};
+      $delta->{$coordinate_for{$direction}} =
+         ($slot->{$direction} - $size) / 2;
+   }
+
+   my ($x, $y) = map {$slot->{$_} + $delta->{$_}} qw< x y >;
+   my $i = $c->group(transform => "translate($x,$y)");
+   my %ancillaries = map { $_ => $icon->{$_} }
+      grep {m{\A[a-z]}imxs} keys $icon->%*;
+   $i->path(
+      %ancillaries,
+      d => $idata->{d},
+      transform => "matrix($sf,0,0,$sf,0,0)",
+   );
+   return $i;
+
+}
+
+sub load_icon ($filepath) {
+   my $image = svg_from($filepath);
+   (my $vb = $image->firstChild()->attribute('viewBox')) =~ s{\A\s+|\s+\z}{}gmxs;
+   my (undef, undef, $width, $height) = split m{\s+}mxs, $vb;
+   my @paths;
+   visit($image,
+      sub ($el) { push @paths, $el if lc($el->getElementName) eq 'path' });
+   my $icon = $paths[-1];
+   return {
+      d => $icon->getAttribute('d'),
+      height => $height,
+      width => $width,
+   }
+}
+
+sub svg_from ($f) {SVG::Parser->new->parse(path($f)->slurp)}
+
+sub visit ($el, $pre_cb = undef, $post_cb = undef) {
+   $pre_cb->($el) if $pre_cb;
+   my $child = $el->getFirstChild();
+   while ($child) {
+      visit($child, $pre_cb, $post_cb);
+      $child = $child->getNextSibling();
+   }
+   $post_cb->($el) if $post_cb;
+   return;
+} ## end sub visit

@@ -1,0 +1,44 @@
+{
+   "card-config": {
+      "width": "62mm",
+      "height": "88mm"
+   },
+   "output": "output",
+   "color": [
+      {"-name":"black","value":"#000"},
+      {"-name":"red","value":"#900"}
+   ],
+   "A": [
+      {"-name":"A","-path":"input/alphanum/A-uppercase.svg"},
+      {"-name":"2","-path":"input/alphanum/2-digit.svg"},
+      {"-name":"3","-path":"input/alphanum/3-digit.svg"},
+      {"-name":"4","-path":"input/alphanum/4-digit.svg"},
+      {"-name":"5","-path":"input/alphanum/5-digit.svg"},
+      {"-name":"6","-path":"input/alphanum/6-digit.svg"},
+      {"-name":"7","-path":"input/alphanum/7-digit.svg"},
+      {"-name":"8","-path":"input/alphanum/8-digit.svg"},
+      {"-name":"9","-path":"input/alphanum/9-digit.svg"},
+      {"-name":"T","-path":"input/alphanum/10-pair.svg"},
+      {"-name":"J","-path":"input/alphanum/J-uppercase.svg"},
+      {"-name":"Q","-path":"input/alphanum/Q-uppercase.svg"},
+      {"-name":"K","-path":"input/alphanum/K-uppercase.svg"}
+   ],
+   "B": [
+      {"-name":"hearts",  "-path":"input/game-icons/skoll/hearts.svg"},
+      {"-name":"diamonds","-path":"input/game-icons/skoll/diamonds.svg"},
+      {"-name":"clubs",   "-path":"input/game-icons/skoll/clubs.svg"},
+      {"-name":"spades",  "-path":"input/game-icons/skoll/spades.svg"}
+   ],
+   "led1":[
+      {"-name":"_"},
+      {"-name":"hops","-path":"input/game-icons/delapouite/hops.svg","-scale":1}
+   ],
+   "led2":[
+      {"-name":"_"},
+      {"-name":"corn","-path":"input/game-icons/delapouite/corn.svg","-scale":1}
+   ],
+   "led3":[
+      {"-name":"_"},
+      {"-name":"acorn","-path":"input/game-icons/lorc/acorn.svg","-scale":1}
+   ]
+}
