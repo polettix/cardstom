@@ -4,10 +4,6 @@
       "height": "88mm"
    },
    "output": "output",
-   "color": [
-      {"-name":"black","value":"#000"},
-      {"-name":"red","value":"#900"}
-   ],
    "A": [
       {"-name":"A","-path":"input/alphanum/A-uppercase.svg"},
       {"-name":"2","-path":"input/alphanum/2-digit.svg"},
@@ -23,12 +19,6 @@
       {"-name":"Q","-path":"input/alphanum/Q-uppercase.svg"},
       {"-name":"K","-path":"input/alphanum/K-uppercase.svg"}
    ],
-   "B": [
-      {"-name":"hearts",  "-path":"input/game-icons/skoll/hearts.svg"},
-      {"-name":"diamonds","-path":"input/game-icons/skoll/diamonds.svg"},
-      {"-name":"clubs",   "-path":"input/game-icons/skoll/clubs.svg"},
-      {"-name":"spades",  "-path":"input/game-icons/skoll/spades.svg"}
-   ],
    "led1":[
       {"-name":"_"},
       {"-name":"hops","-path":"input/game-icons/delapouite/hops.svg","-scale":1}
@@ -40,5 +30,25 @@
    "led3":[
       {"-name":"_"},
       {"-name":"acorn","-path":"input/game-icons/lorc/acorn.svg","-scale":1}
+   ],
+   "sequence": [
+      {
+         "color": [
+            {"-name":"red","value":"#900"}
+         ],
+         "B": [
+            {"-name":"hearts",  "-path":"input/game-icons/skoll/hearts.svg"},
+            {"-name":"diamonds","-path":"input/game-icons/skoll/diamonds.svg"}
+         ]
+      },
+      {
+         "color": [
+            {"-name":"black","value":"#000"}
+         ],
+         "B": [
+            {"-name":"clubs",   "-path":"input/game-icons/skoll/clubs.svg"},
+            {"-name":"spades",  "-path":"input/game-icons/skoll/spades.svg"}
+         ]
+      }
    ]
 }

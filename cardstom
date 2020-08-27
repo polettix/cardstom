@@ -18,11 +18,16 @@ main(@ARGV);
 
 sub main (@args) {
    my $config = decode_json(path($args[0])->slurp_utf8());
-   my $dir = path($config->{output} // '.');
+   my $sequence = delete($config->{sequence}) // [{}];
+   generate_series($config->%*, $_->%*) for $sequence->@*;
+}
+
+sub generate_series (%config) {
+   my $dir = path($config{output} // '.');
    my (@names, %items) = qw< A B C led1 led2 led3 >;
    my @dimensions = map { defined($_) ? $_ : [undef] }
-      $config->@{('color', @names)};
-   my $card_config = $config->{'card-config'} // {};
+      @config{('color', @names)};
+   my $card_config = $config{'card-config'} // {};
    NestedLoops(
       \@dimensions,
       sub ($color, @s) {
